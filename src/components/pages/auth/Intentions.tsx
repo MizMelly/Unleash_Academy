@@ -13,9 +13,9 @@ const intentions = [
 
 export default function Intentions() {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState([]);
+  const [selected, setSelected] = useState<string[]>([]);
 
-  const toggleSelection = (item) => {
+const toggleSelection = (item: string) => {
     if (selected.includes(item)) {
       setSelected(selected.filter((i) => i !== item));
     } else {
