@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Search,
   Loader2,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { admin } from "../../../services/api";
+import { useEffect, useState} from "react";
 
 
 interface Enrollment {
@@ -70,68 +70,50 @@ interface StudentsApiResponse {
   students?: Student[];
 }
 
-const fetchStudents = async () => {
-  try {
-    setLoading(true);
-    setError(null);
+useEffect(() => {
+  let mounted = true;
 
-    const data = (await admin.getStudents()) as
-      | Student[]
-      | StudentsApiResponse;
+  const fetchStudents = async () => {
+    try {
+      if (mounted) {
+        setLoading(true);
+        setError(null);
+      }
 
-    setStudents(
-      Array.isArray(data)
-        ? data
-        : data.items ?? data.students ?? []
-    );
-  } catch (err) {
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Failed to load students"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      const data = (await admin.getStudents()) as
+        | Student[]
+        | StudentsApiResponse;
 
-  useEffect(() => {
+      if (!mounted) return;
 
-    const loadStudents = async () => {
-      await fetchStudents();
-    };
+      setStudents(
+        Array.isArray(data)
+          ? data
+          : data.items ?? data.students ?? []
+      );
+    } catch (err) {
+      if (!mounted) return;
 
-    loadStudents();
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load students"
+      );
+    } finally {
+      if (mounted) {
+        setLoading(false);
+      }
+    }
+  };
 
-  }, []);
+  void fetchStudents();
 
-
+  return () => {
+    mounted = false;
+  };
+}, []);
   // Close menu when clicking outside
 
-  useEffect(() => {
-
-    const handleClickOutside = () => {
-      setOpenMenu(null);
-    };
-
-
-    if (openMenu !== null) {
-
-      document.addEventListener(
-        "click",
-        handleClickOutside
-      );
-
-
-      return () =>
-        document.removeEventListener(
-          "click",
-          handleClickOutside
-        );
-
-    }
-
-  }, [openMenu]);
 
 const filteredStudents = students.filter(
     (student: Student) => {
