@@ -1,6 +1,10 @@
 import { Search, Menu } from "lucide-react";
 
-const AdminHeader = ({ setIsOpen }) => {
+interface AdminHeaderProps {
+  setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const AdminHeader = ({ setIsOpen }: AdminHeaderProps) => {
   return (
     <header className="bg-card border-b border-border px-4 sm:px-6 lg:px-8 py-4">
       <div className="flex items-center justify-between gap-4">

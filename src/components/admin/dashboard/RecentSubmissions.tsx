@@ -3,9 +3,31 @@ import { useState, useEffect } from "react";
 import { learning } from "../../../services/api";
 import SubmissionRow from "./SubmissionRow";
 
+interface Submission {
+  id?: number | string;
+  type?: string;
+  createdAt?: string;
+  submittedAt?: string;
+  studentName?: string;
+  lessonTitle?: string;
+  status?: string;
+
+  student?: {
+    fullName?: string;
+  };
+
+  user?: {
+    fullName?: string;
+  };
+
+  lesson?: {
+    title?: string;
+  };
+}
+
 export default function RecentSubmissions() {
-  const [submissions, setSubmissions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -14,11 +36,35 @@ export default function RecentSubmissions() {
           learning.getAllAssignments(),
           learning.getAllReflections(),
         ]);
-        const assignments = Array.isArray(assignmentsData) ? assignmentsData.map(s => ({...s, type: "assignment"})) : [];
-        const reflections = Array.isArray(reflectionsData) ? reflectionsData.map(s => ({...s, type: "reflection"})) : [];
+
+        const assignments: Submission[] = Array.isArray(assignmentsData)
+          ? assignmentsData.map((s: Submission) => ({
+              ...s,
+              type: "assignment",
+            }))
+          : [];
+
+        const reflections: Submission[] = Array.isArray(reflectionsData)
+          ? reflectionsData.map((s: Submission) => ({
+              ...s,
+              type: "reflection",
+            }))
+          : [];
+
         const all = [...assignments, ...reflections]
-          .sort((a, b) => new Date(b.createdAt || b.submittedAt) - new Date(a.createdAt || a.submittedAt))
+          .sort((a, b) => {
+            const dateA = new Date(
+              a.createdAt ?? a.submittedAt ?? 0
+            ).getTime();
+
+            const dateB = new Date(
+              b.createdAt ?? b.submittedAt ?? 0
+            ).getTime();
+
+            return dateB - dateA;
+          })
           .slice(0, 3);
+
         setSubmissions(all);
       } catch (err) {
         console.error("Failed to load submissions:", err);
@@ -27,7 +73,8 @@ export default function RecentSubmissions() {
         setLoading(false);
       }
     };
-    fetchSubmissions();
+
+    void fetchSubmissions();
   }, []);
 
   if (loading) {
@@ -46,6 +93,7 @@ export default function RecentSubmissions() {
         <h2 className="text-2xl font-semibold text-[#0B1F3A]">
           Recent Submissions
         </h2>
+
         <button className="flex items-center gap-1 text-[#0F66B7] font-medium text-sm hover:underline">
           View all
           <ArrowUpRight size={18} />
@@ -53,14 +101,25 @@ export default function RecentSubmissions() {
       </div>
 
       {submissions.length === 0 ? (
-        <p className="text-gray-400 text-sm text-center py-4">No submissions yet.</p>
+        <p className="py-4 text-center text-sm text-gray-400">
+          No submissions yet.
+        </p>
       ) : (
         submissions.map((sub, i) => (
           <SubmissionRow
-            key={sub.id || i}
-            name={sub.studentName || sub.student?.fullName || sub.user?.fullName || "Unknown"}
-            lesson={sub.lessonTitle || sub.lesson?.title || "Unknown Lesson"}
-            status={sub.status || "pending"}
+            key={sub.id ?? i}
+            name={
+              sub.studentName ??
+              sub.student?.fullName ??
+              sub.user?.fullName ??
+              "Unknown"
+            }
+            lesson={
+              sub.lessonTitle ??
+              sub.lesson?.title ??
+              "Unknown Lesson"
+            }
+            status={sub.status ?? "pending"}
             last={i === submissions.length - 1}
           />
         ))

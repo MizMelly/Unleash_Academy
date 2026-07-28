@@ -1,8 +1,14 @@
+interface CourseCardProps {
+  image: string;
+  title: string;
+  subtitle: string;
+}
+
 export default function CourseCard({
   image,
   title,
   subtitle,
-}) {
+}: CourseCardProps) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border p-3">
       <img

@@ -1,9 +1,16 @@
+interface SubmissionRowProps {
+  name: string;
+  lesson: string;
+  status: string;
+  last?: boolean;
+}
+
 export default function SubmissionRow({
   name,
   lesson,
   status,
   last = false,
-}) {
+}: SubmissionRowProps) {
   return (
     <div
       className={`flex items-center justify-between py-4 ${

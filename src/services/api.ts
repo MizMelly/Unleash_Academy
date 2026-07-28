@@ -701,6 +701,10 @@ lesson?: Lesson;
   isHidden?: boolean;
 
   replies?: DiscussionReply[];
+
+  isFlagged?: boolean;
+  reports?: number;
+
 }
 /* ============================================================
    DISCUSSIONS

@@ -37,7 +37,7 @@ export default function CoursesSection() {
           {courseList.map((course) => (
             <CourseCard
               key={course.id}
-              image={course.thumbnailUrl || course.image || null}
+              image={course.thumbnailUrl ?? course.image ?? ""}
               title={course.title}
               subtitle={`${course.totalModules ?? 0} modules · ${
                 course.totalLessons ?? 0
