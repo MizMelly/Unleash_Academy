@@ -47,7 +47,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/intentions" element={<Intentions />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/lesson" element={<Lesson />} />
+        <Route path="/lesson/:id" element={<Lesson />} />
       </Route>
 
       {/* ================= Admin ================= */}

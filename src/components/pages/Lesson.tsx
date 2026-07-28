@@ -1,3 +1,4 @@
+import { useParams } from "react-router-dom";
 import LessonSidebar from "../../components/lesson/LessonSidebar";
 import VideoPlayer from "../../components/lesson/VideoPlayer";
 import AudioCard from "../../components/lesson/AudioCard";
@@ -7,6 +8,10 @@ import LessonRating from "../../components/lesson/LessonRating";
 import LessonFooter from "../../components/lesson/LessonFooter";
 
 export default function Lesson() {
+  const { id } = useParams<{ id: string }>();
+
+  console.log("Lesson ID:", id);
+
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
 
