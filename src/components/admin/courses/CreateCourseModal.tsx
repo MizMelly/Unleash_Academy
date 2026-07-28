@@ -1,16 +1,52 @@
 import { useState } from "react";
 import { X, Plus, Trash2, Loader2, ChevronRight } from "lucide-react";
-import { courses as coursesApi, modules as modulesApi, lessons as lessonsApi } from "../../../services/api";
+import {
+  courses as coursesApi,
+  modules as modulesApi,
+  lessons as lessonsApi,
+  type Course,
+  type CourseModule,
+} from "../../../services/api";
+
+interface CreateCourseModalProps {
+  onClose: () => void;
+  onCreated: (course?: Course) => void;
+}
+
+interface ModuleInput {
+  title: string;
+  description: string;
+}
+
+interface LessonInput {
+  title: string;
+  description: string;
+  duration: string;
+}
+
+interface CourseFormData {
+  title: string;
+  description: string;
+  price: string;
+  category: string;
+  instructor: string;
+  duration: string;
+  level: string;
+  status: string;
+}
 
 const STEPS = ["Basic Info", "Modules", "Lessons"];
 
-export default function CreateCourseModal({ onClose, onCreated }) {
-  const [step, setStep] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+export default function CreateCourseModal({
+  onClose,
+  onCreated,
+}: CreateCourseModalProps) {
+  const [step, setStep] = useState<number>(0);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Step 1: Basic Info
-  const [courseData, setCourseData] = useState({
+  // Step 1
+  const [courseData, setCourseData] = useState<CourseFormData>({
     title: "",
     description: "",
     price: "",
@@ -20,134 +56,226 @@ export default function CreateCourseModal({ onClose, onCreated }) {
     level: "Beginner",
     status: "Draft",
   });
-  const [createdCourseId, setCreatedCourseId] = useState(null);
 
-  // Step 2: Modules
-  const [moduleList, setModuleList] = useState([{ title: "", description: "" }]);
-  const [createdModules, setCreatedModules] = useState([]);
+  const [createdCourseId, setCreatedCourseId] = useState<number | null>(null);
 
-  // Step 3: Lessons
-  const [lessonsByModule, setLessonsByModule] = useState({});
+  // Step 2
+  const [moduleList, setModuleList] = useState<ModuleInput[]>([
+    {
+      title: "",
+      description: "",
+    },
+  ]);
 
-  const handleCourseChange = (field, value) =>
-    setCourseData((prev) => ({ ...prev, [field]: value }));
+  const [createdModules, setCreatedModules] = useState<CourseModule[]>([]);
 
-  // ---- Step 1 submit ----
+  // Step 3
+  const [lessonsByModule, setLessonsByModule] = useState<
+    Record<number, LessonInput[]>
+  >({});
+
+  const handleCourseChange = (
+    field: keyof CourseFormData,
+    value: string
+  ) => {
+    setCourseData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // ---------------- STEP 1 ----------------
+
   const handleCreateCourse = async () => {
     if (!courseData.title.trim()) {
       setError("Course title is required");
       return;
     }
+
     try {
       setSaving(true);
       setError(null);
-      const res = await coursesApi.create({
+
+      const created: Course = await coursesApi.create({
         ...courseData,
         price: Number(courseData.price) || 0,
       });
-      const created = res.data || res;
+
       setCreatedCourseId(created.id);
       setStep(1);
-    } catch (err) {
-      setError(err.message || "Failed to create course");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create course"
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // ---- Step 2 submit ----
-  const addModuleField = () =>
-    setModuleList((prev) => [...prev, { title: "", description: "" }]);
+  // ---------------- STEP 2 ----------------
 
-  const removeModuleField = (idx) =>
+  const addModuleField = () => {
+    setModuleList((prev) => [
+      ...prev,
+      { title: "", description: "" },
+    ]);
+  };
+
+  const removeModuleField = (idx: number) => {
     setModuleList((prev) => prev.filter((_, i) => i !== idx));
+  };
 
-  const updateModuleField = (idx, field, value) =>
+  const updateModuleField = (
+    idx: number,
+    field: keyof ModuleInput,
+    value: string
+  ) => {
     setModuleList((prev) =>
-      prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m))
+      prev.map((m, i) =>
+        i === idx ? { ...m, [field]: value } : m
+      )
     );
+  };
 
   const handleCreateModules = async () => {
-    const validModules = moduleList.filter((m) => m.title.trim());
+    const validModules = moduleList.filter((m) =>
+      m.title.trim()
+    );
+
     if (validModules.length === 0) {
       setError("Add at least one module");
       return;
     }
+
+    if (!createdCourseId) {
+      setError("Course not created.");
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
-      const created = [];
+
+      const created: CourseModule[] = [];
+
       for (let i = 0; i < validModules.length; i++) {
-        const res = await modulesApi.create({
+        const module: CourseModule = await modulesApi.create({
           courseId: createdCourseId,
           title: validModules[i].title,
           description: validModules[i].description,
           order: i + 1,
         });
-        created.push(res.data || res);
+
+        created.push(module);
       }
+
       setCreatedModules(created);
-      // initialize lesson lists for each module
-      const initialLessons = {};
-      created.forEach((m) => {
-        initialLessons[m.id] = [{ title: "", description: "", duration: "" }];
+
+      const initialLessons: Record<number, LessonInput[]> = {};
+
+      created.forEach((module) => {
+        initialLessons[module.id] = [
+          {
+            title: "",
+            description: "",
+            duration: "",
+          },
+        ];
       });
+
       setLessonsByModule(initialLessons);
       setStep(2);
-    } catch (err) {
-      setError(err.message || "Failed to create modules");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create modules"
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // ---- Step 3 submit ----
-  const addLessonField = (moduleId) =>
-    setLessonsByModule((prev) => ({
-      ...prev,
-      [moduleId]: [...prev[moduleId], { title: "", description: "", duration: "" }],
-    }));
+  // ---------------- STEP 3 ----------------
 
-  const removeLessonField = (moduleId, idx) =>
+  const addLessonField = (moduleId: number) => {
     setLessonsByModule((prev) => ({
       ...prev,
-      [moduleId]: prev[moduleId].filter((_, i) => i !== idx),
+      [moduleId]: [
+        ...prev[moduleId],
+        {
+          title: "",
+          description: "",
+          duration: "",
+        },
+      ],
     }));
+  };
 
-  const updateLessonField = (moduleId, idx, field, value) =>
+  const removeLessonField = (
+    moduleId: number,
+    idx: number
+  ) => {
     setLessonsByModule((prev) => ({
       ...prev,
-      [moduleId]: prev[moduleId].map((l, i) =>
-        i === idx ? { ...l, [field]: value } : l
+      [moduleId]: prev[moduleId].filter(
+        (_, i) => i !== idx
       ),
     }));
+  };
+
+  const updateLessonField = (
+    moduleId: number,
+    idx: number,
+    field: keyof LessonInput,
+    value: string
+  ) => {
+    setLessonsByModule((prev) => ({
+      ...prev,
+      [moduleId]: prev[moduleId].map((lesson, i) =>
+        i === idx
+          ? { ...lesson, [field]: value }
+          : lesson
+      ),
+    }));
+  };
 
   const handleCreateLessons = async () => {
     try {
       setSaving(true);
       setError(null);
-      for (const moduleId of Object.keys(lessonsByModule)) {
-        const lessonsForModule = lessonsByModule[moduleId].filter((l) =>
-          l.title.trim()
+
+      for (const key of Object.keys(lessonsByModule)) {
+        const moduleId = Number(key);
+
+        const lessons = lessonsByModule[moduleId].filter(
+          (lesson) => lesson.title.trim()
         );
-        for (let i = 0; i < lessonsForModule.length; i++) {
+
+        for (let i = 0; i < lessons.length; i++) {
           await lessonsApi.create({
             moduleId,
-            title: lessonsForModule[i].title,
-            description: lessonsForModule[i].description,
-            duration: lessonsForModule[i].duration || "10 min",
+            title: lessons[i].title,
+            description: lessons[i].description,
+            duration: lessons[i].duration || "10 min",
             order: i + 1,
           });
         }
       }
+
       onCreated();
-    } catch (err) {
-      setError(err.message || "Failed to create lessons");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create lessons"
+      );
     } finally {
       setSaving(false);
     }
   };
-
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 py-8">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">

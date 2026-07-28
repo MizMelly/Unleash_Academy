@@ -102,7 +102,7 @@ export default function AdminSidebar({
   </div>
 
   <h1 className="text-xl font-semibold">
-    KTA Hub
+    Unleash Academy
   </h1>
 </div>
 

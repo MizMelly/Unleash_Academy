@@ -121,6 +121,54 @@ export interface Lesson {
 
   status?: string;
 }
+/* ============================================================
+   DISCUSSION TYPES
+============================================================ */
+
+export interface DiscussionReply {
+  id: number;
+  parentCommentId?: number;
+
+  lessonId?: number;
+  lessonTitle?: string;
+
+  content?: string;
+  text?: string;
+
+  userName?: string;
+  studentName?: string;
+
+  user?: User;
+
+  createdAt?: string;
+
+  isHidden?: boolean;
+  isPinned?: boolean;
+}
+
+export interface DiscussionComment {
+  id: number;
+
+  lessonId?: number;
+  lesson?: Lesson;
+
+  lessonTitle?: string;
+
+  content?: string;
+  text?: string;
+
+  userName?: string;
+  studentName?: string;
+
+  user?: User;
+
+  createdAt?: string;
+
+  isHidden?: boolean;
+  isPinned?: boolean;
+
+  replies?: DiscussionReply[];
+}
 
 /* ============================================================
    STUDENT TYPES
@@ -606,28 +654,72 @@ export const learning = {
       }
     ),
 };
+/* ============================================================
+   DISCUSSION TYPES
+============================================================ */
 
+export interface DiscussionReply {
+  id: number;
+  lessonId?: number;
+  parentCommentId?: number;
+
+  content?: string;
+  text?: string;
+
+  userName?: string;
+  studentName?: string;
+
+  user?: User;
+lesson?: Lesson;
+  
+  lessonTitle?: string;
+
+  createdAt?: string;
+
+  isPinned?: boolean;
+  isHidden?: boolean;
+}
+
+export interface DiscussionComment {
+  id: number;
+
+  lessonId?: number;
+
+  content?: string;
+  text?: string;
+
+  userName?: string;
+  studentName?: string;
+user?: User;
+lesson?: Lesson;
+
+  lessonTitle?: string;
+
+  createdAt?: string;
+
+  isPinned?: boolean;
+  isHidden?: boolean;
+
+  replies?: DiscussionReply[];
+}
 /* ============================================================
    DISCUSSIONS
 ============================================================ */
-
 export const discussions = {
-  getByLesson: (
-    lessonId: string | number
-  ) =>
-    apiRequest<Record<string, unknown>[]>(
+  getByLesson: (lessonId: string | number) =>
+    apiRequest<DiscussionComment[]>(
       `/discussions/lesson/${lessonId}`
     ),
 
   getAll: (params = "") =>
-    apiRequest<Record<string, unknown>[]>(
+    apiRequest<DiscussionComment[]>(
       `/discussions${params}`
     ),
 
   postComment: (
     body: Record<string, unknown>
   ) =>
-    apiRequest<Record<string, unknown>>(
+    apiRequest<DiscussionComment>(
       "/discussions",
       {
         method: "POST",
@@ -675,7 +767,6 @@ export const discussions = {
       }
     ),
 };
-
 /* ============================================================
    FILES
 ============================================================ */

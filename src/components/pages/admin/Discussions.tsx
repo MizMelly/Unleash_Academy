@@ -11,105 +11,147 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { discussions, courses } from "../../services/api";
+
+import {
+  discussions,
+  courses,
+  type DiscussionComment,
+  type Course,
+} from "../../../services/api";
 
 export default function Discussions() {
-  const [comments, setComments] = useState([]);
-  const [courseList, setCourseList] = useState([]);
+  const [comments, setComments] = useState<DiscussionComment[]>([]);
+  const [, setCourseList] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyingTo, setReplyingTo] =
+    useState<DiscussionComment | null>(null);
   const [replyText, setReplyText] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [commentsRes, coursesRes] = await Promise.all([
-        discussions.getAll(),
-        courses.getAllAdmin(),
-      ]);
-      const data = commentsRes.data || commentsRes;
-      setComments(Array.isArray(data) ? data : data?.items || data?.comments || []);
-      const courseData = coursesRes.data || coursesRes;
-      setCourseList(Array.isArray(courseData) ? courseData : courseData?.items || []);
-    } catch (err) {
-      setError(err.message || "Failed to load discussions");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchData = async () => {
+  try {
+    setLoading(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+    const [commentsRes, coursesRes] = await Promise.all([
+      discussions.getAll(),
+      courses.getAllAdmin(),
+    ]);
 
-  // FIX: Filter using correct backend field names
+    setComments(commentsRes);
+    setCourseList(coursesRes);
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Failed to load discussions";
+
+    setError(message);
+    alert(message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+/* eslint-disable react-hooks/set-state-in-effect */
+useEffect(() => {
+  void fetchData();
+}, []);
+/* eslint-enable react-hooks/set-state-in-effect */
+
   const filteredComments = comments.filter((c) => {
     const text = c.content || c.text || "";
     const name = c.userName || c.studentName || c.user?.fullName || "";
-    const matchesSearch =
+
+    return (
       text.toLowerCase().includes(search.toLowerCase()) ||
-      name.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
+      name.toLowerCase().includes(search.toLowerCase())
+    );
   });
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this comment permanently?")) return;
-    try {
-      await discussions.deleteComment(id);
-      setComments((prev) => prev.filter((c) => c.id !== id));
-    } catch (err) {
-      alert("Failed to delete: " + err.message);
-    }
-  };
+ const handleDelete = async (id: number) => {
+  if (!confirm("Delete this comment permanently?")) return;
 
-  const handleToggleHide = async (comment) => {
-    try {
-      await discussions.toggleHide(comment.id);
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === comment.id ? { ...c, isHidden: !c.isHidden } : c
-        )
-      );
-    } catch (err) {
-      alert("Failed to toggle visibility: " + err.message);
-    }
-  };
+  try {
+    await discussions.deleteComment(id);
 
-  const handleTogglePin = async (comment) => {
-    try {
-      await discussions.togglePin(comment.id);
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === comment.id ? { ...c, isPinned: !c.isPinned } : c
-        )
-      );
-    } catch (err) {
-      alert("Failed to toggle pin: " + err.message);
-    }
-  };
+    setComments((prev) => prev.filter((c) => c.id !== id));
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Failed to delete comment";
 
-  // FIX: Use PascalCase field names matching backend DTO
-  const handleReply = async () => {
-    if (!replyText.trim() || !replyingTo) return;
-    try {
-      setSaving(true);
-      await discussions.postComment({
-        LessonId: replyingTo.lessonId || replyingTo.lesson?.id,
-        Content: replyText,           // ← FIX: was "text", now "Content"
-        ParentCommentId: replyingTo.id,
-      });
-      setReplyText("");
-      setReplyingTo(null);
-      fetchData();
-    } catch (err) {
-      alert("Failed to reply: " + err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+    alert(`Failed to delete: ${message}`);
+  }
+};
+
+const handleToggleHide = async (
+  comment: DiscussionComment
+) => {
+  try {
+    await discussions.toggleHide(comment.id);
+
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === comment.id
+          ? { ...c, isHidden: !c.isHidden }
+          : c
+      )
+    );
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Failed to toggle visibility";
+
+    alert(message);
+  }
+};
+
+const handleTogglePin = async (
+  comment: DiscussionComment
+) => {
+  try {
+    await discussions.togglePin(comment.id);
+
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === comment.id
+          ? { ...c, isPinned: !c.isPinned }
+          : c
+      )
+    );
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Failed to toggle pin";
+
+    alert(message);
+  }
+};
+
+const handleReply = async () => {
+  if (!replyText.trim() || !replyingTo) return;
+
+  try {
+    setSaving(true);
+
+    await discussions.postComment({
+      LessonId: replyingTo.lessonId ?? replyingTo.lesson?.id,
+      Content: replyText,
+      ParentCommentId: replyingTo.id,
+    });
+
+    setReplyText("");
+    setReplyingTo(null);
+
+    await fetchData();
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Failed to post reply";
+
+    alert(message);
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
