@@ -20,27 +20,27 @@ const menu = [
   {
     name: "My Programs",
     icon: BookOpen,
-    path: "/programs",
+    path: "/",
   },
   {
     name: "Schedule",
     icon: CalendarDays,
-    path: "/schedule",
+    path: "/",
   },
   {
     name: "Community",
     icon: Users,
-    path: "/community",
+    path: "/",
   },
   {
     name: "Achievements",
     icon: Trophy,
-    path: "/achievements",
+    path: "/",
   },
   {
     name: "Settings",
     icon: Settings,
-    path: "/settings",
+    path: "/",
   },
 ];
 
