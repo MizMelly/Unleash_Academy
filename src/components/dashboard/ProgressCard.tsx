@@ -26,11 +26,11 @@ export default function ProgressCard() {
         // Change this depending on your API response
         if (Array.isArray(data) && data.length > 0) {
           setCourse({
-            courseId: data[0].id,
-            courseTitle: data[0].title,
-            moduleTitle: data[0].currentModule,
-            progress: data[0].progress,
-          });
+  courseId: data[0].id,
+  courseTitle: data[0].courseTitle ?? "Untitled Course",
+  moduleTitle: "Continue Learning",
+  progress: data[0].progressPercentage ?? 0,
+});
         }
       } catch (error) {
         console.error(error);
